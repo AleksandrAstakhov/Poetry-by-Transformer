@@ -1,6 +1,7 @@
 from transformer_decoder import Transformer
 
 import torch
+import torch.nn as nn
 import pandas as pd
 
 from transformers import AutoTokenizer
@@ -72,6 +73,8 @@ print(sum(p.numel() for p in model.parameters()) / 1e6, "M parameters")
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
+criterion = nn.CrossEntropyLoss()
+
 progress_bar = tqdma(total=max_iters)
 
 for itera, (x, y) in zip(range(max_iters), train_dataloader):
@@ -83,8 +86,14 @@ for itera, (x, y) in zip(range(max_iters), train_dataloader):
 
     x, y = x.to(device), y.to(device)
 
-    logits, loss = model(x, y)
+    probs = model(x)
+
+    B, T, C = probs.shape
+
     optimizer.zero_grad(set_to_none=True)
+
+    loss = criterion(probs.view(B * T, C), y.view(B * T))
+
     loss.backward()
     optimizer.step()
 

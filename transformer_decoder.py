@@ -124,8 +124,10 @@ class Transformer(nn.Module):
         out = self.blocks(embed)
         out = self.layer_norm(out)
         logits = self.linear(out)
+        
+        prob_fn = F.softmax
 
-        return logits
+        return prob_fn(logits)
 
     def generate(self, input, max_new_tokens):
         for _ in range(max_new_tokens):
