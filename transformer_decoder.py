@@ -1,15 +1,7 @@
-from torch.utils.data import Dataset
 import torch
 import torch.nn as nn
-import numpy as np
-import pandas as pd
 
-from transformers import AutoTokenizer, DataCollatorForLanguageModeling
-from torch.utils.data import Dataset, DataLoader
-from tqdm import tqdm
 from torch.nn import functional as F
-
-from dataset import PoemDataset
 
 
 # =======================

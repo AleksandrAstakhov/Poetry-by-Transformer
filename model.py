@@ -1,4 +1,15 @@
-import transformer-decoder
+from transformer_decoder import Transformer
+
+import torch
+import pandas as pd
+
+from transformers import AutoTokenizer
+from torch.utils.data import DataLoader
+
+from tqdm.auto import tqdm as tqdma
+from torch.nn import functional as F
+
+from dataset import PoemDataset
 
 # =======================
 batch_size = 32
@@ -63,21 +74,24 @@ print(sum(p.numel() for p in model.parameters())/1e6, 'M parameters')
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
-for itera in range(max_iters):
+progress_bar = tqdma(total=max_iters)
 
+for itera, (x, y) in zip(range(max_iters), train_dataloader):
     if itera % eval_interval == 0 or itera == max_iters - 1:
         losses = loss_estim()
-        print(
-            f"step {itera}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
-
-    x, y = next(train_dataloader)
+        print(f"step {itera}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+    
     x, y = x.to(device), y.to(device)
 
     logits, loss = model(x, y)
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
     optimizer.step()
+    
+    progress_bar.update(1)
+
+progress_bar.close()
 
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
-print(tokenizer.decode(m.generate(context, max_new_tokens=500)[0].tolist()))
+print(tokenizer.decode(model.generate(context, max_new_tokens=500)[0].tolist()))
 

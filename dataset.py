@@ -1,5 +1,7 @@
 from torch.utils.data import Dataset
 
+import torch
+
 class PoemDataset(Dataset):
 
     def __init__(self, data, tokenizer, block_size):
