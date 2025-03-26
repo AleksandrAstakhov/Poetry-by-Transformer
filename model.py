@@ -34,11 +34,11 @@ tokenizer.model_max_length = 1000000000
 train_dataset = PoemDataset(
     "".join(text[: int(0.9 * len(text))]), tokenizer, block_size
 )
-train_dataloader = iter(DataLoader(train_dataset, batch_size=batch_size, shuffle=False))
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
 
 
 test_dataset = PoemDataset("".join(text[int(0.9 * len(text)) :]), tokenizer, block_size)
-test_dataloader = iter(DataLoader(test_dataset, batch_size=batch_size, shuffle=False))
+test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 
 @torch.no_grad()
@@ -47,24 +47,33 @@ def loss_estim():
     train_losses = torch.zeros(eval_iters)
     test_losses = torch.zeros(eval_iters)
 
-    for k, (x_train, y_train, x_test, y_test) in zip(
-        range(eval_iters), zip(train_dataloader, test_dataloader)
-    ):
+    train_iter = train_dataloader
+    test_iter = test_dataloader
+
+    for k in range(eval_iters):
+        for x_train, y_train in train_iter:
+            break
+        for x_test, y_test in test_iter:
+            break
+
+        x_train, y_train = x_train.to(device), y_train.to(device)
+        x_test, y_test = x_train.to(device), y_train.to(device)
+
         logits_train = model(x_train)
         logits_test = model(x_test)
 
         B, T, C = logits_train.shape
 
-        logits_train = logits_train.view(B * T, C)
-        logits_test = logits_test.view(B * T, C)
+        logits_train = logits_train.view(B*T, C)
+        logits_test = logits_test.view(B*T, C)
 
-        y_train = y_train.view(B * T)
-        y_test = y_test.view(B * T)
+        y_train = y_train.view(B*T)
+        y_test = y_test.view(B*T)
 
         train_losses[k] = F.cross_entropy(logits_train, y_train)
         test_losses[k] = F.cross_entropy(logits_test, y_test)
 
-    return {"train": train_losses.mean(), "test": test_losses.mean()}
+    return {"train": train_losses.mean(), "val": test_losses.mean()}
 
 
 model = Transformer(tokenizer.vocab_size, embedding_dim, layers_number).to(device)
